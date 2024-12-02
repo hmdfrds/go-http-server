@@ -2,62 +2,92 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
-	"net/http"
+	"net"
+	"os"
+	"path/filepath"
 	"strings"
-	"time"
 )
 
-func rootHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Welcome to My Simple HTTP Server!")
-}
-
-func aboutHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "This server was handcrafter with Go!")
-}
-
-func searchHandler(w http.ResponseWriter, r *http.Request) {
-	query := r.URL.Query().Get("q")
-	if query == "" {
-		http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
-		return
-	}
-	fmt.Fprintf(w, "Searching for: %s", query)
-}
-
-func helloHandler(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, "/helo/")
-	if path == "" {
-		http.Error(w, "Name not provided", http.StatusBadRequest)
-		return
-	}
-	fmt.Fprintf(w, "Hello, %s", path)
-}
-
-func loggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		log.Printf("[%s] %s %s", start.Format(time.RFC3339), r.Method, r.URL.Path)
-		next.ServeHTTP(w, r)
-		log.Printf("Request processed in %s\n", time.Since(start))
-	})
-}
-
 func main() {
-	// Set up handlers
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", rootHandler)
-	mux.HandleFunc("/about", aboutHandler)
-	mux.HandleFunc("/search", searchHandler)
-	mux.HandleFunc("/helo/", helloHandler)
-
-	// wrap handlers with middleware
-	loggedMux := loggingMiddleware(mux)
-
-	// Start server
-	fmt.Println("Starting server on :8080...")
-	err := http.ListenAndServe(":8080", loggedMux)
+	// Open the TCP socket
+	listener, err := net.Listen("tcp", ":8080")
 	if err != nil {
-		log.Fatalf("Server failed to start: %v", err)
+		log.Fatal("Error starting server:", err)
 	}
+	defer listener.Close()
+
+	fmt.Println("Listening on port 8080...")
+
+	// Accept incoming connections
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			log.Printf("Error accepting connection: %v", err)
+			continue
+		}
+
+		// Handler connection
+		go handleConnection(conn)
+	}
+}
+
+func handleConnection(conn net.Conn) {
+	defer conn.Close()
+
+	// Read the incomming
+	buffer := make([]byte, 4096)
+	n, err := conn.Read(buffer)
+	if err != nil && err != io.EOF {
+		log.Printf("Error reading: %v", err)
+		return
+	}
+
+	// Parse the request
+	request := string(buffer[:n])
+	fmt.Println("Request received:\n", request)
+
+	// Check for the requested method and path
+
+	lines := strings.Split(request, "\r\n")
+	if len(lines) > 0 {
+		parts := strings.Fields(lines[0])
+		if len(parts) > 1 {
+
+			method, path := parts[0], parts[1]
+			var response string
+			if method == "GET" {
+				if path == "/" {
+					path = "/index.html"
+				}
+				response = serveFile(path)
+			} else if method == "POST" {
+				response = "HTTP/1.1 418 I'm a teapot\r\nContent-Type: text/plain\r\n\r\n418 - Will do later"
+			}
+			conn.Write([]byte(response))
+
+		}
+	}
+}
+
+func serveFile(path string) string {
+	extension := strings.ToLower((filepath.Ext(path)))
+	var contentType string
+	switch extension {
+	case ".html":
+		contentType = "text/html"
+	case ".css":
+		contentType = "text/css"
+	default:
+		contentType = "text/plain"
+	}
+
+	buf, err := os.ReadFile("public" + path)
+	if err != nil {
+		return "HTTP/1.1 404 Not Founc\r\nContent-Type: text/plain\r\n\r\n404 - Not Found"
+	}
+
+	return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: %s\r\n\r\n%s", contentType, string(buf))
+
 }
