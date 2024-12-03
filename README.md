@@ -42,11 +42,12 @@ This project is for me to explore HTTP servers and improve my Go.
 
 ## To-Do
 
-- [ ] Serve static HTML files.
+- [x] Serve static HTML files.
 - [ ] Respond with custom messages for different routes.
 - [ ] Handle query parameters.
-- [ ] Return a `404` error for unknown routes.
-- [ ] Basic logging.
+- [x] Return a `404` error for unknown routes.
+- [x] Basic logging.
+- [ ] Handle `POST` method.
 
 ## License
 

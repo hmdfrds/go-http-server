@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
+	request "go-http-server/Request"
+	response "go-http-server/Response"
+	"go-http-server/handlers"
 	"io"
 	"log"
 	"net"
-	"os"
-	"path/filepath"
-	"strings"
+	"net/http"
+	"time"
 )
 
 func main() {
@@ -27,10 +29,13 @@ func main() {
 			log.Printf("Error accepting connection: %v", err)
 			continue
 		}
-
 		// Handler connection
 		go handleConnection(conn)
 	}
+}
+
+func logRequest(req request.Request, res response.Response, duration time.Duration) {
+	log.Printf("Method: %s, Path: %s, Status: %d(%s), Duration: %d ms", req.Method, req.Path, res.StatusCode, http.StatusText(res.StatusCode), duration.Milliseconds())
 }
 
 func handleConnection(conn net.Conn) {
@@ -45,49 +50,18 @@ func handleConnection(conn net.Conn) {
 	}
 
 	// Parse the request
-	request := string(buffer[:n])
-	fmt.Println("Request received:\n", request)
+	req, err := request.GetRequest(string(buffer[:n]))
+	if err != nil {
+		res := response.NewBadRequestResponse()
+		conn.Write([]byte(res.String()))
+		logRequest(req, res, 0)
+		return
+	}
 
 	// Check for the requested method and path
+	start := time.Now()
+	res := handlers.GetResponse(req)
+	conn.Write([]byte(res.String()))
 
-	lines := strings.Split(request, "\r\n")
-	if len(lines) > 0 {
-		parts := strings.Fields(lines[0])
-		if len(parts) > 1 {
-
-			method, path := parts[0], parts[1]
-			var response string
-			if method == "GET" {
-				if path == "/" {
-					path = "/index.html"
-				}
-				response = serveFile(path)
-			} else if method == "POST" {
-				response = "HTTP/1.1 418 I'm a teapot\r\nContent-Type: text/plain\r\n\r\n418 - Will do later"
-			}
-			conn.Write([]byte(response))
-
-		}
-	}
-}
-
-func serveFile(path string) string {
-	extension := strings.ToLower((filepath.Ext(path)))
-	var contentType string
-	switch extension {
-	case ".html":
-		contentType = "text/html"
-	case ".css":
-		contentType = "text/css"
-	default:
-		contentType = "text/plain"
-	}
-
-	buf, err := os.ReadFile("public" + path)
-	if err != nil {
-		return "HTTP/1.1 404 Not Founc\r\nContent-Type: text/plain\r\n\r\n404 - Not Found"
-	}
-
-	return fmt.Sprintf("HTTP/1.1 200 OK\r\nContent-Type: %s\r\n\r\n%s", contentType, string(buf))
-
+	logRequest(req, res, time.Since(start))
 }
