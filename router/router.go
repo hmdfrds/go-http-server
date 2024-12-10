@@ -30,6 +30,8 @@ func (r *Router) Handle(req request.Request) response.Response {
 	return response.NewNotFoundResponse()
 }
 
+// Check if the request path is valid or not
+// For now it can check for static, dynamic, and query path
 func validRequest(route, reqPath string) bool {
 	pathAndQuery := strings.SplitN(reqPath, "?", 2)
 	reqPathOnly := pathAndQuery[0]
@@ -47,6 +49,7 @@ func validRequest(route, reqPath string) bool {
 		}
 	}
 
+	// Maybe I should allow every path to accept query
 	if route == "/search" && len(pathAndQuery) > 1 {
 		return true
 	}

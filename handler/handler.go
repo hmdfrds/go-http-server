@@ -44,7 +44,6 @@ func HelloHandler(r request.Request) response.Response {
 }
 
 func SearchHandler(r request.Request) response.Response {
-
 	if r.Method != "GET" {
 		return response.NewNotFoundResponse()
 	}
@@ -82,14 +81,15 @@ func serveFile(path string) response.Response {
 	cleanPath := filepath.Clean("public" + path)
 	buf, err := os.ReadFile(cleanPath)
 	if err != nil {
-		return handleError(err, path)
+		fmt.Printf("Error serving file: %s, %v\n", path, err)
+		return response.NewInternalServerErrorResponse()
 	}
 	return response.NewResponse(http.StatusOK, getContentType(cleanPath), string(buf))
 }
 
+// Can easily call http.DetectContentType() to do this
 func getContentType(path string) string {
 	extension := strings.ToLower((filepath.Ext(path)))
-	// http.DetectContentType()
 	switch extension {
 	case ".html":
 		return "text/html"
@@ -98,14 +98,6 @@ func getContentType(path string) string {
 	default:
 		return "application/octet-stream"
 	}
-}
-
-func handleError(err error, path string) response.Response {
-	if err != nil {
-		fmt.Printf("Error serving file: %s, %v\n", path, err)
-		return response.NewInternalServerErrorResponse()
-	}
-	return response.NewNotFoundResponse()
 }
 
 func getParams(query string) map[string]string {

@@ -18,7 +18,6 @@ type Server struct {
 func (s *Server) Serve(conn net.Conn) {
 	defer conn.Close()
 
-	// Read the incomming
 	buffer := make([]byte, 4096)
 	n, err := conn.Read(buffer)
 	if err != nil && err != io.EOF {
@@ -26,7 +25,6 @@ func (s *Server) Serve(conn net.Conn) {
 		return
 	}
 
-	// Parse the request
 	req, err := request.GetRequest(string(buffer[:n]))
 	if err != nil {
 		res := response.NewBadRequestResponse()
@@ -35,7 +33,6 @@ func (s *Server) Serve(conn net.Conn) {
 		return
 	}
 
-	// Check for the requested method and path
 	start := time.Now()
 	res := s.Router.Handle(req)
 	conn.Write([]byte(res.String()))
