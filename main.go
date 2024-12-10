@@ -18,6 +18,7 @@ func main() {
 	router.AddHandlerFunc("/about", handler.ServeHTML)
 	router.AddHandlerFunc("/hello/{name}", handler.HelloHandler)
 	router.AddHandlerFunc("/static/style.css", handler.StaticFileHandler)
+	router.AddHandlerFunc("/search", handler.SearchHandler)
 	// Create server
 	server := &server.Server{Router: router}
 

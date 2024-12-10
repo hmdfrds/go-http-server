@@ -43,6 +43,32 @@ func HelloHandler(r request.Request) response.Response {
 
 }
 
+func SearchHandler(r request.Request) response.Response {
+
+	if r.Method != "GET" {
+		return response.NewNotFoundResponse()
+	}
+
+	queryReqParts := strings.Split(r.Path, "?")
+	if len(queryReqParts) < 2 {
+		return response.NewResponse(200, "text/plain", "No Parameter Provided")
+	}
+
+	_, query := queryReqParts[0], queryReqParts[1]
+
+	params := getParams(query)
+
+	if len(params) <= 0 {
+		return response.NewResponse(200, "text/plain", "Wrong parameters format")
+	}
+
+	if value, exist := params["q"]; exist {
+		return response.NewResponse(200, "text/plain", "Searching for "+value)
+	}
+
+	return response.NewResponse(200, "text/plain", "parameter q not found")
+}
+
 func StaticFileHandler(r request.Request) response.Response {
 	if r.Method == "GET" && !strings.HasPrefix(r.Path, "/static") {
 		return response.NewNotFoundResponse()
@@ -80,4 +106,22 @@ func handleError(err error, path string) response.Response {
 		return response.NewInternalServerErrorResponse()
 	}
 	return response.NewNotFoundResponse()
+}
+
+func getParams(query string) map[string]string {
+	queryParts := strings.Split(query, "&")
+
+	if len(queryParts) < 1 {
+		return nil
+	}
+
+	params := make(map[string]string)
+
+	for _, query := range queryParts {
+		kv := strings.SplitN(query, "=", 2)
+		if len(kv) == 2 {
+			params[kv[0]] = kv[1]
+		}
+	}
+	return params
 }
