@@ -21,6 +21,7 @@ func (r *Router) AddHandlerFunc(path string, handlerFunc HandlerFunc) {
 }
 
 func (r *Router) Handle(req request.Request) response.Response {
+	
 	for path, handlerFunc := range r.handler {
 
 		if validRequest(path, req.Path) {

@@ -15,6 +15,9 @@ type Response struct {
 func NewResponse(statusCode int, contentType string, body string) Response {
 	return Response{StatusCode: statusCode, ContentType: contentType, Body: body}
 }
+func NewOkTextPlainResponse(body string) Response {
+	return NewResponse(200, "text/plain", body)
+}
 func NewNotFoundResponse() Response {
 	return Response{StatusCode: 404, ContentType: "text/plain", Body: "404 - Not Found"}
 }
@@ -27,7 +30,7 @@ func NewBadRequestResponse() Response {
 }
 
 func (r *Response) String() string {
-	return fmt.Sprintf("HTTP/1.1 %d %s\r\nContent-Type: %s\r\n%s\r\n %s", r.StatusCode, http.StatusText(r.StatusCode), r.ContentType, r.getCacheLine(), r.Body)
+	return fmt.Sprintf("HTTP/1.1 %d %s\r\nContent-Type: %s\r\n%s\r\n%s", r.StatusCode, http.StatusText(r.StatusCode), r.ContentType, r.getCacheLine(), r.Body)
 }
 
 func (r *Response) getCacheLine() string {

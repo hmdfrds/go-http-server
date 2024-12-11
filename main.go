@@ -16,9 +16,12 @@ func main() {
 	router.AddHandlerFunc("/", handler.ServeHTML)
 	router.AddHandlerFunc("/home", handler.ServeHTML)
 	router.AddHandlerFunc("/about", handler.ServeHTML)
+	router.AddHandlerFunc("/form", handler.ServeHTML)
 	router.AddHandlerFunc("/hello/{name}", handler.HelloHandler)
 	router.AddHandlerFunc("/static/style.css", handler.StaticFileHandler)
 	router.AddHandlerFunc("/search", handler.SearchHandler)
+	router.AddHandlerFunc("/submit-form", handler.SubmitFormHandler)
+
 	// Create server
 	server := &server.Server{Router: router}
 

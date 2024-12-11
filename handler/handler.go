@@ -4,12 +4,14 @@ import (
 	"fmt"
 	request "go-http-server/Request"
 	response "go-http-server/Response"
+	"go-http-server/utils"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
+// Just give them the HTML page if it's exist
 func ServeHTML(r request.Request) response.Response {
 	if r.Method != "GET" {
 		return response.NewNotFoundResponse()
@@ -24,6 +26,8 @@ func ServeHTML(r request.Request) response.Response {
 
 }
 
+// Just hello the input
+// I don't have the page. This is the URL: http://localhost:8080/hello/{name}
 func HelloHandler(r request.Request) response.Response {
 	if r.Method != "GET" {
 		return response.NewNotFoundResponse()
@@ -39,10 +43,11 @@ func HelloHandler(r request.Request) response.Response {
 	if err != nil {
 		return response.NewNotFoundResponse()
 	}
-	return response.NewResponse(http.StatusOK, getContentType("/hello.html"), fmt.Sprintf(string(buf), name))
+	return response.NewResponse(http.StatusOK, getContentType("/hello.html"), fmt.Sprintf(string(buf), utils.UnescapeString(name)))
 
 }
 
+// Just return a plain page. Didn't make any search
 func SearchHandler(r request.Request) response.Response {
 	if r.Method != "GET" {
 		return response.NewNotFoundResponse()
@@ -50,7 +55,7 @@ func SearchHandler(r request.Request) response.Response {
 
 	queryReqParts := strings.Split(r.Path, "?")
 	if len(queryReqParts) < 2 {
-		return response.NewResponse(200, "text/plain", "No Parameter Provided")
+		return response.NewOkTextPlainResponse("No Parameter Provided")
 	}
 
 	_, query := queryReqParts[0], queryReqParts[1]
@@ -58,16 +63,44 @@ func SearchHandler(r request.Request) response.Response {
 	params := getParams(query)
 
 	if len(params) <= 0 {
-		return response.NewResponse(200, "text/plain", "Wrong parameters format")
+		return response.NewOkTextPlainResponse("Wrong parameters format")
 	}
 
 	if value, exist := params["q"]; exist {
-		return response.NewResponse(200, "text/plain", "Searching for "+value)
+		return response.NewOkTextPlainResponse("Searching for " + value)
 	}
 
-	return response.NewResponse(200, "text/plain", "parameter q not found")
+	return response.NewOkTextPlainResponse("parameter q not found")
 }
 
+// Return a result page base on the user input.
+func SubmitFormHandler(r request.Request) response.Response {
+
+	if r.Method != "POST" {
+		return response.NewNotFoundResponse()
+	}
+
+	params := getParams(r.Body)
+
+	if len(params) <= 0 {
+		return response.NewOkTextPlainResponse("No parameters provided")
+	}
+	name := params["name"]
+	email := params["email"]
+	fmt.Println(r.Body)
+	if name == "" || email == "" {
+		return response.NewOkTextPlainResponse("Required parameters not found")
+	}
+
+	buf, err := os.ReadFile("public/result.html")
+	if err != nil {
+		return response.NewNotFoundResponse()
+	}
+	return response.NewResponse(http.StatusOK, getContentType("/result.html"), fmt.Sprintf(string(buf), name, email))
+}
+
+// Get the file from static folder
+// Will cache it for 3 min
 func StaticFileHandler(r request.Request) response.Response {
 	if r.Method == "GET" && !strings.HasPrefix(r.Path, "/static") {
 		return response.NewNotFoundResponse()
@@ -76,6 +109,7 @@ func StaticFileHandler(r request.Request) response.Response {
 	return res.SetCache(360)
 }
 
+// Get the file from public folder
 func serveFile(path string) response.Response {
 
 	cleanPath := filepath.Clean("public" + path)
@@ -100,6 +134,7 @@ func getContentType(path string) string {
 	}
 }
 
+// Separate the params in to map
 func getParams(query string) map[string]string {
 	queryParts := strings.Split(query, "&")
 
