@@ -2,8 +2,8 @@ package handler
 
 import (
 	"fmt"
-	request "go-http-server/Request"
-	response "go-http-server/Response"
+	request "go-http-server/request"
+	response "go-http-server/response"
 	"go-http-server/utils"
 	"net/http"
 	"os"
@@ -41,6 +41,7 @@ func HelloHandler(r request.Request) response.Response {
 
 	buf, err := os.ReadFile("public/hello.html")
 	if err != nil {
+		fmt.Println(err)
 		return response.NewNotFoundResponse()
 	}
 	return response.NewResponse(http.StatusOK, getContentType("/hello.html"), fmt.Sprintf(string(buf), utils.UnescapeString(name)))

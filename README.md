@@ -11,7 +11,6 @@ This project is for me to explore HTTP servers and improve my Go.
 - Lightweight HTTP server
 - Basic routing
 - Simple response handling
-- Middleware
 
 ## Getting Started
 
@@ -40,14 +39,21 @@ This project is for me to explore HTTP servers and improve my Go.
     http://localhost:8080
     ```
 
-## To-Do
+## Testing
 
-- [x] Serve static HTML files.
-- [x] Respond with custom messages for different routes.
-- [ ] Handle query parameters.
-- [x] Return a `404` error for unknown routes.
-- [x] Basic logging.
-- [ ] Handle `POST` method.
+Run tests using:
+
+```bash
+go test ./...
+```
+
+## Project Status
+
+I have implemented all the features necessary for my learning goals. The project was primarily an exercise to explore and deepen my understanding of building HTTP servers in Go. It's not a polished or production-ready solution, but it serves as a valuable learning experience.
+
+## Author
+
+Created as a personal side project to learn Golang and improve my skills.
 
 ## License
 
